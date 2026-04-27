@@ -1,0 +1,21 @@
+name: CI/CD Pipeline
+on: [pull_request, push]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+      - run: npm install
+      
+      # 1. Run your Jest tests
+      - run: npm test 
+
+      # 2. Deploy only if tests pass AND it's the main branch
+      - name: Deploy to Google
+        if: github.ref == 'refs/heads/main' && success()
+        run: sudo npm install -g @google/clasp && clasp push -f
+        env:
+          CLASP_CONFIG: ${{ secrets.CLASP_CONFIG }} # Store your credentials safely in GitHub
