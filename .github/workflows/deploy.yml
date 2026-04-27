@@ -1,0 +1,27 @@
+name: CI/CD Pipeline
+
+on: [pull_request, push]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Run Jest Tests
+        run: npm test
+
+      - name: Deploy to Google
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          npm install -g @google/clasp
+          echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+          clasp push -f
