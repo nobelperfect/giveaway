@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .input-group { margin-bottom: 10px; }
+    label { display: inline-block; width: 150px; }
+    input { padding: 5px; }
+    #result { margin-top: 20px; font-weight: bold; font-size: 1.2em; }
+  </style>
+</head>
+<body>
+  <h1>Finance Dashboard</h1>
+  <div class="input-group">
+    <label>Fixed ETB:</label>
+    <input type="number" id="fixedETB" value="5000">
+  </div>
+  <div class="input-group">
+    <label>Target USD:</label>
+    <input type="number" id="targetUSD" value="100">
+  </div>
+  <div class="input-group">
+    <label>Current Rate:</label>
+    <input type="number" id="currentRate" value="60">
+  </div>
+  <div class="input-group">
+    <label>Reference Rate:</label>
+    <input type="number" id="referenceRate" value="50">
+  </div>
+  <button onclick="calculate()">Calculate</button>
+
+  <div id="result"></div>
+
+  <script>
+    function calculate() {
+      const fixedETB = parseFloat(document.getElementById('fixedETB').value);
+      const targetUSD = parseFloat(document.getElementById('targetUSD').value);
+      const currentRate = parseFloat(document.getElementById('currentRate').value);
+      const referenceRate = parseFloat(document.getElementById('referenceRate').value);
+
+      google.script.run
+        .withSuccessHandler(function(amount) {
+          document.getElementById('result').innerText = 'Payable Amount: ' + amount + ' ETB';
+        })
+        .calculatePayableAmount(fixedETB, targetUSD, currentRate, referenceRate);
+    }
+  </script>
+</body>
+</html>
