@@ -12,7 +12,7 @@ jobs:
       
       # 1. Run your Jest tests
       - run: npm test 
-
+      
       # 2. Deploy only if tests pass AND it's the main branch
       - name: Deploy to Google
         if: github.ref == 'refs/heads/main' && success()
