@@ -18,6 +18,9 @@ describe('Reducer: Inflation & Threshold Logic', () => {
                 status: 'pending'
             }]
         };
+
+        jest.spyOn(console, 'warn').mockImplementation(() => { });
+
     });
 
     test('should keep fixed ETB when rate is stable (Ratio > 0.55)', () => {
@@ -61,4 +64,49 @@ describe('Reducer: Inflation & Threshold Logic', () => {
         expect(target.receiptId).toBe(payload.fileId);
         expect(newState.wallet.remaining).toBe(initialState.wallet.remaining);
     });
+
+    test('should update recipient with success story URL', () => {
+        const action = {
+            type: 'SET_SUCCESS_STORY',
+            payload: { id: 'REC-01', url: 'https://google.com' }
+        };
+        const newState = appReducer(initialState, action);
+        const target = newState.recipients.find(r => r.id === 'REC-01');
+
+        expect(target.successStoryUrl).toBe(action.payload.url);
+    });
+
+    test('should handle missing recipient gracefully in CONFIRM_DISPATCH', () => {
+        const action = { type: 'CONFIRM_DISPATCH', payload: 'NON_EXISTENT_ID' };
+        const newState = appReducer(initialState, action);
+        // Should return state unchanged instead of crashing
+        expect(newState).toEqual(initialState);
+        expect(console.warn).toHaveBeenCalled();
+    });
+
+    test('should prevent division by zero in UPDATE_EXCHANGE_RATE', () => {
+        const action = { type: 'UPDATE_EXCHANGE_RATE', payload: 0 };
+        const newState = appReducer(initialState, action);
+        // Should not result in Infinity or NaN
+        expect(newState.recipients[0].amount).toBe(initialState.recipients[0].fixedETBAmount);
+    });
+
+    test('should handle missing referenceRate by defaulting to fixed amount', () => {
+        // Scenario: Agent forgot to put a reference rate in the sheet for this recipient
+        const stateWithBadData = {
+            ...initialState,
+            recipients: [{ ...initialState.recipients[0], referenceRate: undefined }]
+        };
+
+        const action = { type: 'UPDATE_EXCHANGE_RATE', payload: 100 };
+        const newState = appReducer(stateWithBadData, action);
+
+        // Should NOT adjust, should stay at fixedETBAmount (5000)
+        expect(newState.recipients[0].amount).toBe(5000);
+        expect(newState.recipients[0].isAdjusted).toBe(false);
+    });
+
+
+
+
 });

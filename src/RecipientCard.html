@@ -1,0 +1,16 @@
+<!-- src/RecipientCard.html -->
+<div class="bubbly-card" id="card-${id}">
+  <div class="card-header">
+    <span class="name">${name}</span>
+    <span class="badge ${status}">${status_translated}</span>
+  </div>
+  <div class="card-body">
+    <div class="amount">${amount_formatted}</div>
+    <div class="purpose">${purpose}</div>
+  </div>
+  <div class="card-actions">
+    <button class="btn-confirm" onclick="handleDispatch('${id}')">
+      ${btn_text}
+    </button>
+  </div>
+</div>

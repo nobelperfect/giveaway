@@ -2,43 +2,66 @@
  * src/Reducer.js
  * The "Accountant": Pure logic to handle state transitions.
  */
+/**
+ * src/Reducer.js
+ */
 const appReducer = (state, action) => {
     switch (action.type) {
 
-        // Triggered when the Admin updates the global exchange rate
-        case 'UPDATE_EXCHANGE_RATE': {
-            const newRate = action.payload;
+            case 'UPDATE_EXCHANGE_RATE': {
+      // Coerce to number and default to 0
+      const newRate = Number(action.payload) || 0;
+      
+      const updatedRecipients = state.recipients.map(rec => {
+        const refRate = Number(rec.referenceRate) || 0;
+        
+        // Fix: Defensive Ratio Calculation
+        // If either rate is missing or 0, we set ratio to Infinity 
+        // so the (ratio <= 0.55) check safely fails.
+        const valueRatio = (refRate > 0 && newRate > 0) 
+                           ? refRate / newRate 
+                           : Infinity;
 
-            const updatedRecipients = state.recipients.map(rec => {
-                // Calculate current purchasing power ratio
-                // (Ref Rate 50 / Current Rate 100) = 0.50
-                const valueRatio = rec.referenceRate / newRate;
+        let finalAmount = Number(rec.fixedETBAmount) || 0;
+        let isAdjusted = false;
 
-                let finalAmount = rec.fixedETBAmount;
-                let isAdjusted = false;
-
-                // If currency value drops to 55% or lower, reinstate to USD value
-                if (valueRatio <= 0.55) {
-                    finalAmount = rec.targetUSD * newRate;
-                    isAdjusted = true;
-                }
-
-                return {
-                    ...rec,
-                    amount: finalAmount,
-                    isAdjusted: isAdjusted
-                };
-            });
-
-            return {
-                ...state,
-                exchangeRates: { ...state.exchangeRates, current: newRate },
-                recipients: updatedRecipients
-            };
+        // Threshold check (Safe from NaN/Infinity)
+        if (valueRatio <= 0.55) {
+          const targetUSD = Number(rec.targetUSD) || 0;
+          finalAmount = targetUSD * newRate;
+          isAdjusted = true;
         }
+
+        return { ...rec, amount: finalAmount, isAdjusted: isAdjusted };
+      });
+
+      return {
+        ...state,
+        exchangeRates: { ...state.exchangeRates, current: newRate },
+        recipients: updatedRecipients
+      };
+    }
+
 
         case 'CONFIRM_DISPATCH': {
             const recipient = state.recipients.find(r => r.id === action.payload);
+
+            // Fix for rbug_001: Null check
+            if (!recipient) {
+                console.warn(`Dispatch failed: Recipient ${action.payload} not found.`);
+                return state;
+            }
+
+            // Fix for rbug_002: Numeric validation and negative check
+            const currentWallet = Number(state.wallet.remaining) || 0;
+            const amountToSubtract = Number(recipient.amount) || 0;
+
+            // Safety check: Don't allow dispatch if it exceeds wallet
+            if (amountToSubtract > currentWallet) {
+                console.error("Insufficient funds in wallet.");
+                return state;
+            }
+
             const updatedRecipients = state.recipients.map(r =>
                 r.id === action.payload ? { ...r, status: 'dispatched' } : r
             );
@@ -48,7 +71,7 @@ const appReducer = (state, action) => {
                 recipients: updatedRecipients,
                 wallet: {
                     ...state.wallet,
-                    remaining: state.wallet.remaining - recipient.amount
+                    remaining: currentWallet - amountToSubtract
                 }
             };
         }
@@ -67,6 +90,15 @@ const appReducer = (state, action) => {
                 recipients: updatedRecipients
             };
         }
+
+        case 'SET_SUCCESS_STORY': {
+            const { id, url } = action.payload;
+            const updatedRecipients = state.recipients.map(rec =>
+                rec.id === id ? { ...rec, successStoryUrl: url } : rec
+            );
+            return { ...state, recipients: updatedRecipients };
+        }
+
 
         default:
             return state;
