@@ -16,6 +16,9 @@ global.SpreadsheetApp = {
 global.Logger = {
   log: jest.fn()
 };
+moduleDirectories: ["node_modules", "tests"]
+
+
 
 // // giveaway/jest.setup.js
 // global.SpreadsheetApp = {

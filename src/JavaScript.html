@@ -1,0 +1,81 @@
+<script>
+    /**
+     * APP CONDUCTOR (IIFE)
+     */
+    (function () {
+        // 1. DATA BRIDGE
+        const bridge = document.getElementById('state-bridge');
+        if (!bridge) return;
+        const INITIAL_STATE = JSON.parse(bridge.dataset.state);
+
+        // 2. INITIALIZE STORE
+        // (Assuming createStore, appReducer, and securityInterceptor are available)
+        const store = createStore(appReducer, INITIAL_STATE, [securityInterceptor]);
+
+        // 3. UI TEMPLATES (From Components.html)
+        const TPL_CARD = document.getElementById('tpl-recipient-card').innerHTML;
+        const TPL_HEADER = document.getElementById('tpl-agent-summary').innerHTML;
+
+        /**
+         * THE RENDERER
+         * This is what turns your State into Bubbly UI
+         */
+        function renderApp(state) {
+            // A. Render Header (The Sticky Island)
+            const headerEl = document.getElementById('header-component');
+            headerEl.innerHTML = UIComponents.render(TPL_HEADER, {
+                agent_name: state.user.name,
+                label_wallet: _t('wallet'),
+                balance_formatted: formatCurrency(state.wallet.remaining, 'current'),
+                count_pending: state.recipients.filter(r => r.status === 'pending').length,
+                count_completed: state.recipients.filter(r => r.status === 'dispatched').length
+            });
+
+            // B. Render Main Dashboard (The Cards)
+            const container = document.getElementById('card-container');
+            container.innerHTML = state.recipients.map(rec => {
+                return UIComponents.render(TPL_CARD, {
+                    id: rec.id,
+                    name: rec.name,
+                    // Mac-style Logic for Bubbly Classes
+                    status_class: `status-${rec.status} ${rec.isExpanded ? 'expanded' : ''}`,
+                    status_label: _t(rec.status),
+                    amount_formatted: formatCurrency(rec.amount, 'current'),
+                    purpose_translated: _t(rec.purpose),
+                    label_purpose: _t('purpose'),
+                    label_confirm: _t('confirm_dispatch'),
+                    label_receipt_placeholder: _t('enter_receipt_id')
+                });
+            }).join('');
+        }
+
+        /**
+         * GLOBAL ACTIONS (Attached to window so HTML buttons can see them)
+         */
+        window.toggleCard = (id) => {
+            // In a TDD way, we could dispatch a 'TOGGLE_EXPAND' action, 
+            // but for simple UI animation, a class toggle is "Bubbly" and fast.
+            const el = document.getElementById(`card-${id}`);
+            if (el) el.classList.toggle('expanded');
+        };
+
+        window.handleConfirm = (id) => {
+            const input = document.getElementById(`input-${id}`);
+            const receiptId = input ? input.value : '';
+
+            // Optimistic UI Update
+            const success = store.dispatch({ type: 'CONFIRM_DISPATCH', payload: id });
+            if (!success) return; // Interceptor blocked it
+
+            // Background Sync with Google Sheets
+            google.script.run
+                .withSuccessHandler(() => console.log('Sync complete'))
+                .withFailureHandler(err => alert('Sync failed: ' + err))
+                .processDispatch(id, receiptId);
+        };
+
+        // 4. BOOTSTRAP
+        store.subscribe(renderApp); // Syncs UI whenever state changes
+
+    })();
+</script>
