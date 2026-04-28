@@ -1,28 +1,14 @@
-// function doGet() {
-//   return HtmlService.createTemplateFromFile('Index')
-//     .evaluate()
-//     .setTitle('Fund Dispatch Dashboard')
-//     .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0')
-//     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-// }
-
 /**
  * src/Code.gs
  */
 function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
-  
-  // Fetch the data using your SheetService
-  const initialData = getInitialAppData(); 
-  
-  // Inject the entire state as a JSON string
-  // This is faster than calling google.script.run on load
-  template.initialState = JSON.stringify(initialData);
-  
+  template.initialState = JSON.stringify(getInitialAppData());
+
   return template.evaluate()
     .setTitle('Fund Distribution Dashboard')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1, maximum-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // FIXED: Safer than ALLOWALL
 }
 
 function include(filename) {
@@ -37,15 +23,15 @@ function getInitialAppData() {
     // 1. Initialize Services
     const recipientService = new SheetService("Distribution_Master", HeaderStrategies.RECIPIENTS);
     const agentService = new SheetService("User_Directory", HeaderStrategies.AGENTS);
-    
+
     // 2. Fetch Data
     const allRecipients = recipientService.getRows();
     const allAgents = agentService.getRows();
-    
+
     // 3. Identify Logged-in User (Agent or Admin)
     const activeEmail = Session.getActiveUser().getEmail();
     const agentData = allAgents.find(a => a.email === activeEmail);
-    
+
     if (!agentData) {
       throw new Error(`User ${activeEmail} not found in Directory.`);
     }
@@ -63,10 +49,10 @@ function getInitialAppData() {
         currency: "ETB"
       },
       // Only show recipients assigned to this specific agent (unless they are Admin)
-      recipients: agentData.role === 'admin' 
-        ? allRecipients 
+      recipients: agentData.role === 'admin'
+        ? allRecipients
         : allRecipients.filter(r => r.agentId === agentData.id),
-      
+
       exchangeRates: { current: 58.5, reference: 50.0 },
       ui: { language: 'en', displayCurrency: 'ETB' }
     };

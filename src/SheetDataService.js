@@ -30,65 +30,52 @@ class SheetService {
         const dataValues = this._getDataValues();
         const configData = this._getConfigValues();
 
-        const dataHeaders = dataValues[0] || [];
+        const headers = dataValues[0] || [];
         const mapping = {};
-        const errorDetails = [];
+        const errors = [];
 
         internalKeys.forEach((key) => {
-            const configRowIndex = configData.findIndex(r => r[0] === key);
-            const configRow = configData[configRowIndex];
+            const rowIndex = configData.findIndex(r => r[0] === key);
+            const row = configData[rowIndex];
 
-            if (!configRow) {
-                errorDetails.push(`Missing config entry for key "${key}"`);
+            if (!row) {
+                errors.push(`Missing config entry for key "${key}"`);
                 return;
             }
 
-            const sheetHeader = configRow[1];
+            const sheetHeader = row[1];
 
             if (!sheetHeader || !String(sheetHeader).trim()) {
-                errorDetails.push(
-                    `Missing config header for key "${configRow[0]}" (Row ${configRowIndex + 1})`
-                );
-
-                this.configSheet
-                    .getRange(configRowIndex + 1, 2)
-                    .setBackground("#f4cccc");
-
+                errors.push(`Missing config header for key "${key}" (Row ${rowIndex + 1})`);
+                this.configSheet.getRange(rowIndex + 1, 2).setBackground("#f4cccc");
                 return;
             }
 
-            const colIndex = dataHeaders.findIndex(
+            const colIndex = headers.findIndex(
                 h => this._normalize(h) === this._normalize(sheetHeader)
             );
 
             if (colIndex === -1) {
-                errorDetails.push(
-                    `Missing mapping for key "${key}" → expected header "${sheetHeader}" (Config Row: ${configRowIndex + 1})`
+                errors.push(
+                    `Missing mapping for key "${key}" → expected header "${sheetHeader}" (Config Row: ${rowIndex + 1})`
                 );
 
-                this.configSheet
-                    .getRange(configRowIndex + 1, 2)
-                    .setBackground("#f4cccc");
-
+                this.configSheet.getRange(rowIndex + 1, 2).setBackground("#f4cccc");
                 return;
             }
 
             mapping[key] = colIndex;
         });
 
-        if (errorDetails.length > 0) {
-            const sheetName = this.dataSheet.getName
-                ? this.dataSheet.getName()
-                : "Data";
-
+        if (errors.length > 0) {
             throw new Error(
-                `Mapping Failed in sheet "${sheetName}":\n${errorDetails.join("\n")}`
+                `Mapping Failed in sheet "${this.dataSheet.getName()}":\n${errors.join("\n")}`
             );
         }
 
-        if (mapping["id"] === undefined) {
+        if (mapping.id === undefined) {
             throw new Error(
-                "Critical Mapping Failure: The internal key 'id' must be mapped to a column in the Settings sheet."
+                "Critical Mapping Failure: 'id' must be mapped"
             );
         }
 
@@ -99,35 +86,35 @@ class SheetService {
         const data = this._getDataValues().slice(1);
 
         return data.map(row => {
-            const record = {};
+            const obj = {};
 
-            Object.keys(this._mapping).forEach(key => {
-                record[key] = row[this._mapping[key]];
+            Object.keys(this._mapping).forEach(k => {
+                obj[k] = row[this._mapping[k]];
             });
 
-            return record;
+            return obj;
         });
     }
 
-    updateCellById(id, key, newValue) {
+    updateCellById(id, key, value) {
         const data = this._getDataValues();
 
-        const idColIndex = this._mapping["id"];
-        const targetColIndex = this._mapping[key];
+        const idIndex = this._mapping.id;
+        const colIndex = this._mapping[key];
 
-        if (idColIndex === undefined) {
-            throw new Error("Update Failed: 'id' internal key is not mapped.");
+        if (idIndex === undefined) {
+            throw new Error("Missing id mapping");
         }
 
-        if (targetColIndex === undefined) {
-            throw new Error(`Update Failed: Internal key "${key}" is not mapped.`);
+        if (colIndex === undefined) {
+            throw new Error(`Key not mapped: ${key}`);
         }
 
         for (let i = 1; i < data.length; i++) {
-            if (String(data[i][idColIndex]) === String(id)) {
+            if (String(data[i][idIndex]) === String(id)) {
                 this.dataSheet
-                    .getRange(i + 1, targetColIndex + 1)
-                    .setValue(newValue);
+                    .getRange(i + 1, colIndex + 1)
+                    .setValue(value);
 
                 return true;
             }
