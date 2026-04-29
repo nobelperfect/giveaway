@@ -1,129 +1,164 @@
+
+/**
+ * System architecture
+SETTINGS SHEET (truth)
+        ↓
+SheetService builds mapping ONLY
+        ↓
+RAW DATA SHEET stays untouched
+        ↓
+SheetService translates raw → structured objects
+
+Key rule:
+
+SheetService NEVER assumes headers are final. It always depends on Settings mapping.
+*/
+/**
+ * System architecture:
+ * SETTINGS SHEET (truth) -> builds mapping -> translates raw data to objects.
+ */
 class SheetService {
-    constructor(dataSheetName, configSheetName, internalKeys) {
+    constructor(dataSheetName, configSheetName, requiredKeys = []) {
         const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-        this.dataSheet = ss.getSheetByName(dataSheetName);
-        this.configSheet = ss.getSheetByName(configSheetName);
+        this._dataSheet = ss.getSheetByName(dataSheetName);
+        this._configSheet = ss.getSheetByName(configSheetName);
 
-        if (!this.dataSheet || !this.configSheet) {
-            throw new Error(
-                `Critical Error: Sheets "${dataSheetName}" or "${configSheetName}" not found.`
-            );
+        if (!this._dataSheet || !this._configSheet) {
+            throw new Error("Sheet not found");
         }
 
-        this._mapping = this._loadMapping(internalKeys);
+        this.requiredKeys = requiredKeys;
+        this._mapping = this._loadMapping();
     }
 
-    _getDataValues() {
-        return this.dataSheet.getDataRange().getValues();
-    }
+    _loadMapping() {
+        const values = this._configSheet.getDataRange().getValues();
 
-    _getConfigValues() {
-        return this.configSheet.getDataRange().getValues();
-    }
+        // 1. BASIC VALIDATION
+        if (!values || values.length <= 1) {
+            throw new Error("Mapping Failed");
+        }
 
-    _normalize(v) {
-        return String(v ?? "").trim().toLowerCase();
-    }
+        const headers = values[0];
+        const rows = values.slice(1);
 
-    _loadMapping(internalKeys) {
-        const dataValues = this._getDataValues();
-        const configData = this._getConfigValues();
+        const keyIdx = headers.indexOf("Internal Key");
+        const sheetIdx = headers.indexOf("Sheet Name");
+        const headerIdx = headers.indexOf("Sheet Header");
 
-        const headers = dataValues[0] || [];
+        const hasSheetName = sheetIdx !== -1;
+        const targetSheetName = this._dataSheet.getName();
+
+        // 2. BUILD RAW MAPPING + ROW ERRORS
         const mapping = {};
-        const errors = [];
+        const rowErrors = [];
 
-        internalKeys.forEach((key) => {
-            const rowIndex = configData.findIndex(r => r[0] === key);
-            const row = configData[rowIndex];
+        rows.forEach((row, i) => {
+            const internalKey = row[keyIdx];
+            const sheetHeader = row[headerIdx];
+            const sheetName = hasSheetName ? row[sheetIdx] : targetSheetName;
 
-            if (!row) {
-                errors.push(`Missing config entry for key "${key}"`);
-                return;
+            // Only track errors if the row is meant for THIS sheet (or generic if no sheet name column)
+            if (sheetName === targetSheetName) {
+                if (!internalKey || !sheetHeader) {
+                    rowErrors.push(i + 2);
+                    return;
+                }
+                mapping[internalKey] = sheetHeader;
             }
-
-            const sheetHeader = row[1];
-
-            if (!sheetHeader || !String(sheetHeader).trim()) {
-                errors.push(`Missing config header for key "${key}" (Row ${rowIndex + 1})`);
-                this.configSheet.getRange(rowIndex + 1, 2).setBackground("#f4cccc");
-                return;
-            }
-
-            const colIndex = headers.findIndex(
-                h => this._normalize(h) === this._normalize(sheetHeader)
-            );
-
-            if (colIndex === -1) {
-                errors.push(
-                    `Missing mapping for key "${key}" → expected header "${sheetHeader}" (Config Row: ${rowIndex + 1})`
-                );
-
-                this.configSheet.getRange(rowIndex + 1, 2).setBackground("#f4cccc");
-                return;
-            }
-
-            mapping[key] = colIndex;
         });
 
-        if (errors.length > 0) {
-            throw new Error(
-                `Mapping Failed in sheet "${this.dataSheet.getName()}":\n${errors.join("\n")}`
-            );
+        // 3. ROW ERROR HAS HIGHEST PRIORITY
+        if (rowErrors.length > 0) {
+            throw new Error(`Config Row: ${rowErrors.join(", ")}`);
         }
 
-        if (mapping.id === undefined) {
-            throw new Error(
-                "Critical Mapping Failure: 'id' must be mapped"
-            );
+        // 4. EMPTY MAPPING → CONTEXTUAL ERROR
+        if (Object.keys(mapping).length === 0) {
+            throw new Error(`No keys found for sheet ${targetSheetName}`);
+        }
+
+        // 5. REQUIRED KEYS CHECK
+        if (this.requiredKeys.includes("id") && !mapping["id"]) {
+            throw new Error("Critical Mapping Failure: id not mapped");
+        }
+
+        // 6. DATA SHEET VALIDATION (Compare Config mapping vs Actual Headers)
+        const dataValues = this._dataSheet.getDataRange().getValues();
+        const dataHeaders = dataValues[0].map(h => String(h).trim());
+
+        const keysToValidate = this.requiredKeys.length > 0
+            ? this.requiredKeys
+            : Object.keys(mapping);
+
+        const missingHeaders = keysToValidate.filter(key => {
+            const header = mapping[key];
+            return !header || !dataHeaders.includes(String(header).trim());
+        });
+
+        if (missingHeaders.length > 0) {
+            this._highlightErrors();
+            throw new Error("Mapping Failed");
         }
 
         return mapping;
     }
 
+    _highlightErrors() {
+        this._configSheet.getRange(1, 1).setBackground("#f4cccc");
+    }
+
+    /**
+     * Translates raw sheet rows into structured JavaScript objects
+     */
     getRows() {
-        const data = this._getDataValues().slice(1);
+        const dataValues = this._dataSheet.getDataRange().getValues();
+        const headers = dataValues[0];
+        const rows = dataValues.slice(1);
 
-        return data.map(row => {
+        const headerIndexMap = {};
+        headers.forEach((h, i) => { headerIndexMap[h] = i; });
+
+        return rows.map(row => {
             const obj = {};
-
-            Object.keys(this._mapping).forEach(k => {
-                obj[k] = row[this._mapping[k]];
+            Object.entries(this._mapping).forEach(([key, sheetHeader]) => {
+                const idx = headerIndexMap[sheetHeader];
+                obj[key] = idx !== undefined ? row[idx] : undefined;
             });
-
             return obj;
         });
     }
 
+    /**
+     * Updates a single cell in the data sheet by looking up the record ID
+     */
     updateCellById(id, key, value) {
-        const data = this._getDataValues();
-
-        const idIndex = this._mapping.id;
-        const colIndex = this._mapping[key];
-
-        if (idIndex === undefined) {
-            throw new Error("Missing id mapping");
+        const sheetHeader = this._mapping[key];
+        if (!sheetHeader) {
+            throw new Error(`${key} not mapped`);
         }
 
-        if (colIndex === undefined) {
-            throw new Error(`Key not mapped: ${key}`);
-        }
+        const dataValues = this._dataSheet.getDataRange().getValues();
+        const headers = dataValues[0];
 
-        for (let i = 1; i < data.length; i++) {
-            if (String(data[i][idIndex]) === String(id)) {
-                this.dataSheet
-                    .getRange(i + 1, colIndex + 1)
+        const idHeader = this._mapping["id"];
+        const idIndex = headers.indexOf(idHeader);
+        const targetIndex = headers.indexOf(sheetHeader);
+
+        for (let i = 1; i < dataValues.length; i++) {
+            // String comparison to prevent numeric type mismatches
+            if (String(dataValues[i][idIndex]) === String(id)) {
+                this._dataSheet
+                    .getRange(i + 1, targetIndex + 1)
                     .setValue(value);
-
                 return true;
             }
         }
-
         return false;
     }
 }
 
-if (typeof module !== "undefined") {
+if (typeof module !== 'undefined') {
     module.exports = { SheetService };
 }
