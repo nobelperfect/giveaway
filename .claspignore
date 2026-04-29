@@ -1,0 +1,4 @@
+# .claspignore
+index.dev.html
+tests/**
+**/*.test.js

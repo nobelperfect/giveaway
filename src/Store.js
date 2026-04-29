@@ -1,6 +1,5 @@
-/**
- * src/Store.js
- */
+
+
 function createStore(reducer, initialState, middlewares = []) {
     let state = initialState;
     const listeners = [];

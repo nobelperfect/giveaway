@@ -1,25 +1,26 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <base target="_top">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 1. Pull in the Bubbly CSS -->
-    <?!= include('Stylesheet'); ?>
-  </head>
-  <body>
-    <!-- 2. Main App Structure -->
-    <div id="app">
-      <header id="header-component"></header>
-      <main id="card-container"></main>
-    </div>
+<head>
+  <base target="_top">
+  <?!= include('Stylesheet'); ?>
+</head>
+<body>
+  <div id="app">
+    <header id="header-component"></header>
+    <div id="admin-oversight-container"></div>
+    <div id="card-container"></div>
+  </div>
 
-    <!-- 3. The Component Templates (Blueprints) -->
-    <?!= include('Components'); ?>
+  <!-- 1. Templates -->
+  <?!= include('Components'); ?>
 
-    <!-- 4. The State Bridge (Safely passes data from Google to JS) -->
-    <div id="state-bridge" data-state='<?!= initialState ?>' style="display:none;"></div>
+  <!-- 2. Data Bridge -->
+  <div id="state-bridge" data-state='<?!= initialState ?>' style="display:none;"></div>
 
-    <!-- 5. Pull in the App Logic (Only once!) -->
-    <?!= include('JavaScript'); ?>
-  </body>
+  <!-- 3. Logic Injection (Wrap in a script block) -->
+ 
+
+  <!-- 4. Conductor (Already has <script> tags inside it) -->
+  <?!= include('JavaScript'); ?>
+</body>
 </html>
