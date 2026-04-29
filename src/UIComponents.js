@@ -1,3 +1,4 @@
+
 // /**
 //  * src/UIComponents.js
 //  * Renders a component by injecting data into a string-based template.
@@ -31,10 +32,9 @@
 // /**
 //  * src/UIComponents.js
 //  */
+
 const UIComponents = {
-  /**
-   * Replaces placeholders in the format ${key} with values from the data object.
-   */
+
   render: (template, data) => {
     return template.replace(/\${\s*(\w+)\s*}/g, (match, key) => {
       return data[key] !== undefined ? data[key] : "";

@@ -1,25 +1,42 @@
 /**
  * src/Code.gs
  */
+// function doGet() {
+//   const template = HtmlService.createTemplateFromFile('Index');
+//   template.initialState = JSON.stringify(getInitialAppData());
+
+//   return template.evaluate()
+//     .setTitle('Fund Distribution Dashboard')
+//     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+//     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // FIXED: Safer than ALLOWALL
+// }
+
+// function include(filename) {
+//   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+// }
+
 function doGet() {
   const template = HtmlService.createTemplateFromFile('Index');
-  template.initialState = JSON.stringify(getInitialAppData());
+
+  // HARDCODE A TINY STATE FOR TESTING
+  template.initialState = JSON.stringify({
+    user: { name: "Test User", role: "admin" },
+    wallet: { remaining: 1000 },
+    recipients: [],
+    analytics: { totalFixed: 0, totalActual: 0, variance: 0, percentIncrease: 0 }
+  });
 
   return template.evaluate()
-    .setTitle('Fund Distribution Dashboard')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // FIXED: Safer than ALLOWALL
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN);
 }
 
-function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
-}
 
 /**
  * src/Code.gs
  */
 function getInitialAppData() {
   try {
+    validateSettings();
     // 1. Initialize Services
     const recipientService = new SheetService("Distribution_Master", HeaderStrategies.RECIPIENTS);
     const agentService = new SheetService("User_Directory", HeaderStrategies.AGENTS);
@@ -62,6 +79,18 @@ function getInitialAppData() {
     throw e;
   }
 }
+/**
+ * Creates a custom menu in the Google Sheet UI.
+ */
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('🚀 Bubbly Admin')
+    .addItem('✅ Validate Settings', 'validateSettings')
+    .addSeparator()
+    .addItem('🛠️ Re-Run Initial Setup', 'setupSettingsSheet')
+    .addToUi();
+}
+
 
 /**
  * Handles the Base64 image upload from the mobile dashboard.

@@ -1,7 +1,53 @@
+<!-- 1. THE MISSING HEADER (STUCK ISLAND) -->
+<script type="text/template" id="tpl-agent-summary">
+  <div class="header-island-content">
+    <div class="agent-info">
+      <strong>${agent_name}</strong>
+    </div>
+    <div class="wallet-info">
+      <span class="wallet-pill">${balance_formatted}</span>
+    </div>
+  </div>
+</script>
+
+<!-- 2. RECIPIENT CARD -->
 <script type="text/template" id="tpl-recipient-card">
-  <div class="bubbly-card ${status}">
-    <h3>${name}</h3>
-    <p>${amount_formatted}</p>
-    <button onclick="handleDispatch('${id}')">Confirm</button>
+  <div class="bubbly-card ${status_class}" id="card-${id}" onclick="toggleCard('${id}')">
+    <div class="card-header">
+      <span class="name">${name}</span>
+      <span class="badge ${status_class}">${status_label}</span>
+    </div>
+    <div class="amount-display">${amount_formatted}</div>
+    
+    <div class="expanded-content">
+      <p><em>${label_purpose}:</em> ${purpose_translated}</p>
+      <input type="text" id="input-${id}" placeholder="${label_receipt_placeholder}" onclick="event.stopPropagation()">
+      <button class="btn-confirm" onclick="event.stopPropagation(); handleConfirm('${id}')">
+        ${label_confirm}
+      </button>
+    </div>
+  </div>
+</script>
+
+<!-- 3. ADMIN ANALYTICS -->
+<script type="text/template" id="tpl-admin-analytics">
+  <div class="bubbly-card admin-summary ${severity_class}">
+    <div class="summary-row" style="display: flex; justify-content: space-between;">
+      <div class="summary-item">
+        <label>Baseline (Fixed)</label>
+        <div class="value">${total_fixed}</div>
+      </div>
+      <div class="summary-item">
+        <label>Current Requirement</label>
+        <div class="value">${total_actual}</div>
+      </div>
+    </div>
+    <div class="variance-bar" style="background: rgba(255,255,255,0.1); height: 8px; border-radius: 4px; margin: 15px 0;">
+      <div class="variance-fill" style="width: ${percent_increase}%; background: var(--system-blue); height: 100%; transition: width 1s;"></div>
+    </div>
+    <div class="summary-footer" style="display: flex; justify-content: space-between; font-size: 0.8rem;">
+      <span>Variance: <strong>+${variance_etb} ETB</strong></span>
+      <span>Impact: <strong>${percent_increase}%</strong></span>
+    </div>
   </div>
 </script>
