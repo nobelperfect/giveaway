@@ -3,32 +3,62 @@
  */
 const SetupLogic = {
   /**
-   * Returns the configuration array for the Settings sheet.
+   * Settings sheet schema (context-aware mapping system)
    */
   getSettingsConfig: () => {
     return [
-      ["Internal Key", "Sheet Header", "Description / Notes"],
-      ["id", "Recipient ID", "Unique identifier for every record"],
-      ["name", "Full Name", "Used for display on Bubbly cards"],
-      ["status", "Status", "Current state (pending, dispatched)"],
-      ["amount", "Principal Amount", "Calculated ETB value"],
-      ["fixedETBAmount", "Fixed ETB Base", "The family's predictable baseline"],
-      ["targetUSD", "Target USD Value", "USD value for inflation safety"],
-      ["referenceRate", "Reference Rate", "Rate when baseline was set"],
-      ["isAdjusted", "Is Adjusted", "Trigger for 55% threshold"],
-      ["receiptId", "Receipt ID", "Drive File ID"],
-      ["receiptUrl", "Receipt Link", "Drive URL"],
-      ["email", "Email Address", "Agent login"],
-      ["role", "User Role", "admin, agent, or recipient"],
-      ["wallet", "Current Wallet", "Lump sum balance"]
+      ["Internal Key", "Sheet Name", "Sheet Header", "Description / Notes"],
+
+      // =========================
+      // Distribution_Master (Recipients)
+      // =========================
+      ["id", "Distribution_Master", "Recipient ID", "Unique identifier for every record"],
+      ["name", "Distribution_Master", "Full Name", "Display name"],
+      ["status", "Distribution_Master", "Status", "pending | dispatched"],
+      ["amount", "Distribution_Master", "Principal Amount", "ETB value"],
+      ["fixedETBAmount", "Distribution_Master", "Fixed ETB Base", "Baseline amount"],
+      ["targetUSD", "Distribution_Master", "Target USD Value", ""],
+      ["referenceRate", "Distribution_Master", "Reference Rate", ""],
+      ["isAdjusted", "Distribution_Master", "Is Adjusted", ""],
+      ["receiptId", "Distribution_Master", "Receipt ID", ""],
+      ["receiptUrl", "Distribution_Master", "Receipt Link", ""],
+      ["agentId", "Distribution_Master", "Agent ID", "Assigned agent"],
+
+      // =========================
+      // User_Directory (Agents / Users)
+      // =========================
+      ["id", "User_Directory", "Agent ID", "Unique person ID"],
+      ["name", "User_Directory", "Full Name", ""],
+      ["email", "User_Directory", "Email Address", "Login email"],
+      ["role", "User_Directory", "User Role", "admin | agent"],
+      ["wallet", "User_Directory", "Current Wallet", "Balance"]
     ];
   },
 
   /**
-   * Validates that the config contains all required keys.
+   * Data sheet headers (actual sheet structure, NOT admin-editable)
+   */
+  getDataSheetHeaders: (sheetName) => {
+    const headers = {
+      "Distribution_Master": [
+        "Recipient ID", "Full Name", "Status", "Principal Amount",
+        "Fixed ETB Base", "Target USD Value", "Reference Rate",
+        "Is Adjusted", "Receipt ID", "Receipt Link", "Agent ID",
+        "Success Story Photo", "Success Story Description"
+      ],
+      "User_Directory": [
+        "Agent ID", "Full Name", "Email Address", "User Role", "Current Wallet"
+      ]
+    };
+
+    return headers[sheetName] || [];
+  },
+
+  /**
+   * Validates required internal keys exist in config
    */
   verifyConfigIntegrity: (config) => {
-    const required = ["id", "amount", "status", "referenceRate", "targetUSD"];
+    const required = ["id", "name", "status", "email", "role"];
     const keys = config.map(row => row[0]);
     return required.every(key => keys.includes(key));
   }

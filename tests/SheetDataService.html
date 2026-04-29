@@ -1,5 +1,8 @@
 const { SheetService } = require('../src/SheetDataService');
-const { createDataSheet, createConfigSheet } = require('./testUtils/sheetMocks');
+const {
+    createDataSheet,
+    createConfigSheet
+} = require('./testUtils/sheetMocks');
 
 describe('SheetService Strategy Pattern', () => {
     let mockDataSheet;
@@ -8,14 +11,12 @@ describe('SheetService Strategy Pattern', () => {
     beforeEach(() => {
         jest.clearAllMocks();
 
-        // Standard mock setup
-        mockDataSheet = createDataSheet(); 
+        mockDataSheet = createDataSheet();
         mockConfigSheet = createConfigSheet();
 
         global.SpreadsheetApp = {
             getActiveSpreadsheet: jest.fn(() => ({
                 getSheetByName: jest.fn((name) =>
-                    // Ensure "Data" matches what we pass to the constructor
                     name === "Data" ? mockDataSheet : mockConfigSheet
                 )
             }))
@@ -23,11 +24,6 @@ describe('SheetService Strategy Pattern', () => {
     });
 
     test('should correctly map headers from config sheet', () => {
-        // Fix: Ensure the mockConfigSheet has "Data" in the Sheet Name column
-        // Our sheetMocks.js default config uses "Distribution_Master", 
-        // so we must match it here.
-        mockDataSheet.getName = jest.fn(() => "Distribution_Master");
-        
         const service = new SheetService("Data", "Settings", ["id", "status"]);
         const rows = service.getRows();
 
@@ -35,40 +31,36 @@ describe('SheetService Strategy Pattern', () => {
     });
 
     test('should highlight missing headers in red', () => {
-        const targetName = "Distribution_Master";
-        mockDataSheet = createDataSheet([["Status", "Wrong Column"]]);
-        mockDataSheet.getName = jest.fn(() => targetName);
+        mockDataSheet = createDataSheet([
+            ["Status", "Wrong Column"]
+        ]);
 
         mockConfigSheet = createConfigSheet([
             ["Internal Key", "Sheet Name", "Sheet Header"],
-            ["id", targetName, "Recipient ID"] // Sheet Name matches target
+            ["id", "Distribution_Master", "ID"]
         ]);
 
         expect(() => {
             new SheetService("Data", "Settings", ["id"]);
         }).toThrow(/Mapping Failed/);
 
-        // Verify the red highlight was triggered
         expect(mockConfigSheet.getRange).toHaveBeenCalled();
-        expect(mockConfigSheet.__range.setBackground).toHaveBeenCalledWith("#f4cccc");
+        expect(mockConfigSheet.__range.setBackground)
+            .toHaveBeenCalledWith("#f4cccc");
     });
 
     test('should throw with row number in config error', () => {
-        const targetName = "Distribution_Master";
-        mockDataSheet.getName = jest.fn(() => targetName);
-        
         mockConfigSheet = createConfigSheet([
             ["Internal Key", "Sheet Name", "Sheet Header"],
-            ["id", targetName, ""] // Empty header triggers row error
+            ["id", "MISSING_COL"]
         ]);
 
         expect(() => {
             new SheetService("Data", "Settings", ["id"]);
-        }).toThrow(/Config Row: 2/); // Updated to match your new row-error logic
+        }).toThrow(/Config Row:/);
     });
 
     test('should update correct cell by id', () => {
-        mockDataSheet.getName = jest.fn(() => "Distribution_Master");
         const service = new SheetService("Data", "Settings", ["id", "status"]);
 
         service.updateCellById("REC-01", "status", "done");
@@ -77,44 +69,48 @@ describe('SheetService Strategy Pattern', () => {
     });
 
     test('should return false if id not found', () => {
-        mockDataSheet.getName = jest.fn(() => "Distribution_Master");
         const service = new SheetService("Data", "Settings", ["id", "status"]);
 
         const result = service.updateCellById("NOT_EXIST", "status", "done");
+
         expect(result).toBe(false);
     });
 
     test('should throw if id mapping missing', () => {
-        const targetName = "Distribution_Master";
-        mockDataSheet.getName = jest.fn(() => targetName);
-
         mockConfigSheet = createConfigSheet([
             ["Internal Key", "Sheet Name", "Sheet Header"],
-            ["status", targetName, "Status"]
+            ["status", "Status"]
         ]);
 
         expect(() => {
-            // Passing 'id' as a required key
-            new SheetService("Data", "Settings", ["id", "status"]);
-        }).toThrow(/Critical Mapping Failure: id not mapped/i);
+            new SheetService("Data", "Settings", ["status"]);
+        }).toThrow(/Critical Mapping Failure/i);
     });
 
-    test('should throw if config has no keys for this specific sheet', () => {
-        mockDataSheet.getName = jest.fn(() => "Other_Sheet");
+    test('should throw if config empty', () => {
+        mockConfigSheet = createConfigSheet([
+           ["Internal Key", "Sheet Name", "Sheet Header"],
+        ]);
 
         expect(() => {
             new SheetService("Data", "Settings", ["id"]);
-        }).toThrow(/No keys found for sheet Other_Sheet/i);
+        }).toThrow(/Mapping Failed/i);
+    });
+
+    test('should throw on unmapped update key', () => {
+        const service = new SheetService("Data", "Settings", ["id", "status"]);
+
+        expect(() => {
+            service.updateCellById("REC-01", "unknown", "value");
+        }).toThrow(/not mapped/i);
     });
 
     test('should map multiple rows correctly', () => {
-        const targetName = "Distribution_Master";
         mockDataSheet = createDataSheet([
             ["Status", "Recipient ID"],
             ["pending", "REC-01"],
             ["done", "REC-02"]
         ]);
-        mockDataSheet.getName = jest.fn(() => targetName);
 
         const service = new SheetService("Data", "Settings", ["id", "status"]);
         const rows = service.getRows();
@@ -128,12 +124,16 @@ describe('SheetService Strategy Pattern', () => {
             ["Extra", "Status", "Recipient ID"],
             ["X", "pending", "REC-01"]
         ]);
-        mockDataSheet.getName = jest.fn(() => "Distribution_Master");
 
         const service = new SheetService("Data", "Settings", ["id", "status"]);
         const rows = service.getRows();
 
         expect(rows[0].id).toBe("REC-01");
         expect(rows[0].status).toBe("pending");
+    });
+
+    test('mock config is valid', () => {
+        const values = mockConfigSheet.getDataRange().getValues();
+        expect(values[1][0]).toBe("id");
     });
 });

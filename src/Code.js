@@ -1,33 +1,26 @@
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
 /**
- * src/Code.gs
+ * src/Code.js
  */
-// function doGet() {
-//   const template = HtmlService.createTemplateFromFile('Index');
-//   template.initialState = JSON.stringify(getInitialAppData());
-
-//   return template.evaluate()
-//     .setTitle('Fund Distribution Dashboard')
-//     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-//     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // FIXED: Safer than ALLOWALL
-// }
-
-// function include(filename) {
-//   return HtmlService.createHtmlOutputFromFile(filename).getContent();
-// }
-
 function doGet() {
+  // 1. Create the template from your Index.html file
   const template = HtmlService.createTemplateFromFile('Index');
 
-  // HARDCODE A TINY STATE FOR TESTING
-  template.initialState = JSON.stringify({
-    user: { name: "Test User", role: "admin" },
-    wallet: { remaining: 1000 },
-    recipients: [],
-    analytics: { totalFixed: 0, totalActual: 0, variance: 0, percentIncrease: 0 }
-  });
+  // 2. Inject the initial state (The Handshake)
+  // Ensure getInitialAppData() is returning a valid object
+  template.initialState = JSON.stringify(getInitialAppData());
 
-  return template.evaluate()
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN);
+  // 3. Evaluate the template
+  const output = template.evaluate();
+
+  // 4. Set security and mobile settings explicitly
+  output.setTitle('Fund Distribution Dashboard')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // Standard Security
+
+  return output;
 }
 
 
@@ -37,41 +30,59 @@ function doGet() {
 function getInitialAppData() {
   try {
     validateSettings();
-    // 1. Initialize Services
-    const recipientService = new SheetService("Distribution_Master", HeaderStrategies.RECIPIENTS);
-    const agentService = new SheetService("User_Directory", HeaderStrategies.AGENTS);
 
-    // 2. Fetch Data
-    const allRecipients = recipientService.getRows();
+    const recipientKeys = [
+      "id", "name", "status", "amount",
+      "agentId", "referenceRate",
+      "targetUSD", "fixedETBAmount"
+    ];
+
+    const agentKeys = [
+      "id", "email", "name", "role", "wallet"
+    ];
+
+    // LOAD USERS FIRST (IMPORTANT FIX)
+    const agentService = new SheetService(
+      "User_Directory",
+      "Settings",
+      agentKeys
+    );
     const allAgents = agentService.getRows();
 
-    // 3. Identify Logged-in User (Agent or Admin)
     const activeEmail = Session.getActiveUser().getEmail();
     const agentData = allAgents.find(a => a.email === activeEmail);
 
     if (!agentData) {
-      throw new Error(`User ${activeEmail} not found in Directory.`);
+      throw new Error(
+        `User ${activeEmail} not found in User_Directory. Run setupFullSystem.`
+      );
     }
 
-    // 4. Return the object the Store expects
+    // LOAD RECIPIENTS AFTER AUTH
+    const recipientService = new SheetService(
+      "Distribution_Master",
+      "Settings",
+      recipientKeys
+    );
+    const allRecipients = recipientService.getRows();
+
     return {
       user: {
         id: agentData.id,
         name: agentData.name,
-        role: agentData.role, // 'admin' or 'agent'
+        role: agentData.role,
         email: agentData.email
       },
       wallet: {
-        remaining: agentData.wallet, // The "Lump Sum" balance
+        remaining: Number(agentData.wallet) || 0,
         currency: "ETB"
       },
-      // Only show recipients assigned to this specific agent (unless they are Admin)
-      recipients: agentData.role === 'admin'
+      recipients: agentData.role === "admin"
         ? allRecipients
         : allRecipients.filter(r => r.agentId === agentData.id),
 
       exchangeRates: { current: 58.5, reference: 50.0 },
-      ui: { language: 'en', displayCurrency: 'ETB' }
+      ui: { language: "en", displayCurrency: "ETB" }
     };
 
   } catch (e) {
@@ -79,6 +90,7 @@ function getInitialAppData() {
     throw e;
   }
 }
+
 /**
  * Creates a custom menu in the Google Sheet UI.
  */
@@ -113,4 +125,8 @@ function uploadSuccessStory(recipientId, base64Data, fileName) {
   } catch (e) {
     throw new Error("Upload failed: " + e.message);
   }
+}
+// Bottom of src/Code.js
+if (typeof module !== 'undefined') {
+  module.exports = { getInitialAppData };
 }

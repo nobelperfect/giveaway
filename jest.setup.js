@@ -17,25 +17,3 @@ global.Logger = {
   log: jest.fn()
 };
 moduleDirectories: ["node_modules", "tests"]
-
-
-
-// // giveaway/jest.setup.js
-// global.SpreadsheetApp = {
-//   getActive: jest.fn(() => ({
-//     getSheetByName: jest.fn(() => ({
-//       getRange: jest.fn(() => ({
-//         getValue: jest.fn(() => "Mock Value"),
-//         setValue: jest.fn()
-//       }))
-//     })),
-//     getName: jest.fn(() => "Mock Spreadsheet")
-//   })),
-//   getUi: jest.fn(() => ({
-//     alert: jest.fn()
-//   }))
-// };
-
-// global.Logger = {
-//   log: jest.fn((msg) => console.log('GAS Logger:', msg))
-// };
