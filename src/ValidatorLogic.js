@@ -1,45 +1,55 @@
 /**
  * src/ValidatorLogic.js
  */
-function validateSettingsLogic(settingsData, masterHeaders) {
-    const data = [...settingsData];
-    data.shift(); // Remove header row
-    
-    const requiredKeys = ["id", "amount", "status", "referenceRate", "targetUSD"];
+function validateSettingsLogic(settingsData, availableHeaders) {
     const errors = [];
-    const errorRows = [];
-    const foundKeys = [];
+    const seenKeys = {}; 
 
-    data.forEach((row, index) => {
-        const key = String(row[0]).trim();
-        const headerName = String(row[1]).trim();
-        const rowNum = index + 2; 
+    // 1. Grab the Header Row (Row 0)
+    const headerRow = settingsData[0];
+    
+    // 2. Identify Column Indexes carefully
+    const keyIdx = headerRow.indexOf("Internal Key");
+    const sheetIdx = headerRow.indexOf("Sheet Name");
+    const headerIdx = headerRow.indexOf("Sheet Header");
 
-        if (!key) return;
+    // Safety: If column names are missing from the Settings sheet itself
+    if (keyIdx === -1 || sheetIdx === -1 || headerIdx === -1) {
+        return {
+            isValid: false,
+            errors: ["Settings sheet is missing required columns: 'Internal Key', 'Sheet Name', or 'Sheet Header'"]
+        };
+    }
 
-        if (foundKeys.includes(key)) {
-            errors.push(`Duplicate Internal Key: "${key}" at Row ${rowNum}`);
-            errorRows.push(rowNum);
+    // 3. Loop through rows (skip the header row)
+    for (let i = 1; i < settingsData.length; i++) {
+        const row = settingsData[i];
+        const internalKey = row[keyIdx];
+        const sheetName = row[sheetIdx];
+        const targetHeader = row[headerIdx];
+
+        if (!internalKey) continue; 
+
+        // --- A. Namespaced Duplicate Check ---
+        if (!seenKeys[sheetName]) seenKeys[sheetName] = [];
+        if (seenKeys[sheetName].includes(internalKey)) {
+            errors.push(`Duplicate Internal Key: "${internalKey}" in sheet "${sheetName}"`);
         }
-        foundKeys.push(key);
+        seenKeys[sheetName].push(internalKey);
 
-        const headerExists = masterHeaders.includes(headerName);
-        if (!headerName || headerName === "undefined" || !headerExists) {
-            errors.push(`Header "${headerName}" not found or empty for key "${key}"`);
-            errorRows.push(rowNum);
+        // --- B. Header Existence Check ---
+        // We trim both to avoid white-space ghosts
+        const cleanHeader = targetHeader ? String(targetHeader).trim() : "";
+        
+        if (!cleanHeader || !availableHeaders.includes(cleanHeader)) {
+            const displayHeader = cleanHeader || "EMPTY";
+            errors.push(`Header "${displayHeader}" for key "${internalKey}" not found`);
         }
-    });
-
-    requiredKeys.forEach(req => {
-        if (!foundKeys.includes(req)) {
-            errors.push(`Critical Key Missing: "${req}"`);
-        }
-    });
+    }
 
     return {
         isValid: errors.length === 0,
-        errors: errors,
-        errorRows: errorRows
+        errors: errors
     };
 }
 
