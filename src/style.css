@@ -1,246 +1,179 @@
 :root {
-    --mac-bg: rgba(255, 255, 255, 0.7);
-    --mac-border: rgba(255, 255, 255, 0.3);
-    --mac-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    --apple-blue: #007AFF;
-    --apple-green: #34C759;
-    --apple-red: #FF3B30;
-    --glass-blur: blur(15px);
+    /* ENGLISH THEME (Deep Navy) */
+    --bg-deep: #0f172a;
+    --bg-card: #1e293b;
+    --border: #334155;
+    --primary: #38bdf8;
+    --success: #4ade80;
+    --text-p: #f8fafc;
+    --text-s: #94a3b8;
+    --nav-bg: #1e293b;
+    --accent: #38bdf8;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+}
+
+body.lang-am {
+    /* AMHARIC THEME (Heritage) */
+    --bg-deep: #121212;
+    --bg-card: #1a1a1a;
+    --border: #2e3b23;
+    --primary: #fedd00;
+    --success: #009a44;
+    --text-p: #ffffff;
+    --text-s: #a0a0a0;
+    --nav-bg: #1a1a1a;
+    --accent: #009a44;
+    font-family: 'Noto Sans Ethiopic', sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    background-attachment: fixed;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
-    color: #1d1d1f;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-deep);
+    color: var(--text-p);
     margin: 0;
-    padding: 20px;
-    -webkit-font-smoothing: antialiased;
+    padding: 0;
+    transition: all 0.4s ease;
 }
 
-/* The Bubbly Card */
-.bubbly-card {
-    background: var(--mac-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--mac-border);
-    border-radius: 24px;
-    /* Apple Squircle feel */
-    box-shadow: var(--mac-shadow);
-    padding: 20px;
-    margin-bottom: 20px;
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
+/* --- Layout Containers --- */
+.container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 15px;
 }
 
-.bubbly-card:active {
-    transform: scale(0.96);
-    /* Tactile "pop" on mobile */
-}
-
-/* Dashboard Header (Sticky Island) */
-#header-component {
+/* --- Top Nav (Sticky Island) --- */
+.top-nav {
+    background: var(--nav-bg);
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
     position: sticky;
-    top: 10px;
-    z-index: 100;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(20px);
-    border-radius: 30px;
-    padding: 12px 25px;
-    color: white;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.nav-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Status Badges */
-.badge {
-    padding: 6px 14px;
-    border-radius: 14px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
+/* --- The Bubbly Cards --- */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 12px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.pending {
-    background: rgba(255, 204, 0, 0.2);
-    color: #FFCC00;
+.card:active {
+    transform: scale(0.97);
 }
 
-.dispatched {
-    background: rgba(52, 199, 89, 0.2);
-    color: var(--apple-green);
+.card.is-agent {
+    border-left-color: var(--success);
 }
 
-/* Bubbly Button */
-.btn-confirm {
-    background: var(--apple-blue);
-    color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 12px 20px;
-    font-weight: 600;
-    width: 100%;
-    margin-top: 15px;
-    box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
-    transition: all 0.2s ease;
+/* --- NEW: Admin Severity Logic --- */
+.admin-summary.warning {
+    border-left-color: var(--warning);
 }
 
-.btn-confirm:hover {
-    filter: brightness(1.1);
+.admin-summary.critical {
+    border-left-color: var(--danger);
 }
 
-.btn-confirm:active {
-    transform: scale(0.98);
-}
-
-/* Responsive Grid */
-#card-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-    }
-
-    .bubbly-card {
-        border-radius: 20px;
-    }
-
-    #header-component {
-        border-radius: 20px;
-        padding: 10px 15px;
-    }
-}
-
-/* Card Expansion Animation */
-.expanded-content {
-    max-height: 0;
-    opacity: 0;
-    overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.bubbly-card.expanded .expanded-content {
-    max-height: 800px;
-    /* Large enough for your content */
-    opacity: 1;
-    margin-top: 15px;
-    padding-top: 15px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-/* Mac-Style Input Fields */
-.bubbly-input {
-    width: 100%;
-    border-radius: 12px;
-    border: 1px solid #d1d1d6;
-    padding: 12px;
-    font-size: 16px;
-    /* 16px prevents iOS from zooming in automatically */
-    margin: 10px 0;
-    background: rgba(255, 255, 255, 0.5);
-    outline: none;
-    transition: all 0.2s ease;
-}
-
-.bubbly-input:focus {
-    border-color: var(--apple-blue);
-    background: white;
-    box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
-}
-
-/* Prevent numbers from shifting when the wallet updates */
-.wallet-balance {
-    font-variant-numeric: tabular-nums;
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-/* the analytics card */
-
-.admin-summary {
-    background: rgba(28, 28, 30, 0.9) !important;
-    /* Dark Mode feel for Admin */
-    color: white;
-}
-
-.admin-summary label {
-    color: #8e8e93;
-    font-size: 0.8rem;
-}
-
-.admin-summary .value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    margin-top: 5px;
-}
-
-.variance-bar {
+.variance-track {
     background: rgba(255, 255, 255, 0.1);
-    height: 8px;
-    border-radius: 4px;
-    margin: 15px 0;
+    height: 6px;
+    border-radius: 3px;
+    margin: 10px 0;
     overflow: hidden;
 }
 
 .variance-fill {
-    background: var(--system-blue);
     height: 100%;
-    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--primary);
+    transition: width 1s ease;
+}
+
+.admin-summary.warning .variance-fill {
+    background: var(--warning);
 }
 
 .admin-summary.critical .variance-fill {
-    background: var(--system-red);
+    background: var(--danger);
 }
 
-/* --- Final Washed UI Polish --- */
-
-/* 1. Remove the red debug background and fix the Grid */
-#card-container {
-    display: grid !important; /* Switch from block back to Grid */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    padding: 20px;
+/* --- Expansion Logic --- */
+.details-area {
+    display: none;
+    margin-top: 15px;
+    border-top: 1px solid var(--border);
+    padding-top: 15px;
 }
 
-/* 2. Professional Amount Styling */
-.amount-display {
-    font-size: 1.4rem;
-    font-weight: 800;
-    color: var(--apple-blue);
-    margin: 10px 0;
+.card.expanded .details-area {
+    display: block;
+    animation: slideDown 0.3s ease;
 }
 
-/* 3. Ensure cards use the Glassmorphism variables correctly */
-.bubbly-card {
-    display: flex !important;
-    flex-direction: column;
-    color: #1d1d1f !important; /* Native Apple Dark Gray text */
-    background: var(--mac-bg) !important;
-    backdrop-filter: var(--glass-blur) !important;
-    -webkit-backdrop-filter: var(--glass-blur) !important;
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
-/* 4. Fix expansion visibility */
-.bubbly-card.expanded .expanded-content {
-    display: block !important;
-    max-height: 800px;
-    opacity: 1;
-}
-
-/* 5. Utility for the "Bubbly" camera/upload button */
-.btn-camera {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px dashed var(--apple-blue);
-    color: var(--apple-blue);
+/* Form Elements */
+.btn-confirm {
+    width: 100%;
+    padding: 14px;
     border-radius: 12px;
-    padding: 10px;
-    margin-top: 10px;
-    font-weight: 500;
+    border: none;
+    background: var(--primary);
+    color: #000;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.bubbly-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 10px;
+    color: white;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+
+.bubbly-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    color: white;
+    margin-bottom: 10px;
+    font-family: inherit;
+    box-sizing: border-box;
+    /* Critical for mobile sizing */
+}
+
+.bubbly-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(255, 255, 255, 0.1);
 }

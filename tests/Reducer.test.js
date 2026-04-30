@@ -107,25 +107,33 @@ describe('Reducer: Inflation & Threshold Logic', () => {
     });
 
     test('should calculate global budget variance correctly for multiple recipients', () => {
-    // 1. Setup state with TWO recipients
-    const stateWithTwo = {
-        ...initialState,
-        recipients: [
-            { id: 'R1', fixedETBAmount: 5000, referenceRate: 50, targetUSD: 100, amount: 5000 },
-            { id: 'R2', fixedETBAmount: 5000, referenceRate: 50, targetUSD: 100, amount: 5000 }
-        ]
-    };
+        // 1. Setup state with TWO recipients
+        const stateWithTwo = {
+            ...initialState,
+            recipients: [
+                { id: 'R1', fixedETBAmount: 5000, referenceRate: 50, targetUSD: 100, amount: 5000 },
+                { id: 'R2', fixedETBAmount: 5000, referenceRate: 50, targetUSD: 100, amount: 5000 }
+            ]
+        };
 
-    // 2. Crisis trigger (Rate 50 -> 100)
-    const action = { type: 'UPDATE_EXCHANGE_RATE', payload: 100 };
-    const newState = appReducer(stateWithTwo, action);
+        // 2. Crisis trigger (Rate 50 -> 100)
+        const action = { type: 'UPDATE_EXCHANGE_RATE', payload: 100 };
+        const newState = appReducer(stateWithTwo, action);
 
-    // Each 5000 becomes 10,000 (TargetUSD 100 * NewRate 100)
-    // Total Fixed: 10,000 | Total Actual: 20,000
-    // Variance should be 10,000
-    expect(newState.analytics.variance).toBe(10000);
-    expect(newState.analytics.percentIncrease).toBe(100);
-});
+        // Each 5000 becomes 10,000 (TargetUSD 100 * NewRate 100)
+        // Total Fixed: 10,000 | Total Actual: 20,000
+        // Variance should be 10,000
+        expect(newState.analytics.variance).toBe(10000);
+        expect(newState.analytics.percentIncrease).toBe(100);
+    });
+    test('should switch language and preserve all other data', () => {
+        const action = { type: 'SET_LANGUAGE', payload: 'am' };
+        const newState = appReducer(initialState, action);
+
+        expect(newState.ui.language).toBe('am');
+        expect(newState.wallet.remaining).toBe(initialState.wallet.remaining); // Data safe!
+    });
+
 
 
 

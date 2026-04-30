@@ -1,12 +1,24 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <base target="_top">
   <?!= include('Stylesheet'); ?>
 </head>
-<body>
-  <div id="app">
-    <header id="header-component"></header>
+
+<body id="ui-body"> <!-- Ensure ID exists -->
+
+  <nav class="top-nav">
+    <div id="header-component"></div>
+  </nav>
+
+  <div class="container">
+    <!-- PROD version needs these too for the Conductor to find them! -->
+    <div class="section-title">
+      <span id="t-dash">My Dispatches</span>
+      <button class="lang-toggle" onclick="toggleLanguage()" id="t-lang-btn">አማርኛ</button>
+    </div>
+
     <div id="admin-oversight-container"></div>
     <div id="card-container"></div>
   </div>
@@ -18,9 +30,10 @@
   <div id="state-bridge" data-state='<?!= initialState ?>' style="display:none;"></div>
 
   <!-- 3. Logic Injection (Wrap in a script block) -->
- 
+
 
   <!-- 4. Conductor (Already has <script> tags inside it) -->
   <?!= include('JavaScript'); ?>
 </body>
+
 </html>
