@@ -3,63 +3,60 @@
 
 <head>
   <base target="_top">
-  <!-- CSS -->
-  <link rel="stylesheet" href="style.css"> <!-- Make sure you created style.css -->
+  <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
-  <div id="debug-flag" style="background: yellow; padding: 10px;">🚧 VS CODE DEV MODE</div>
+<body id="ui-body">
+  <nav class="top-nav">
+    <div id="header-component"></div>
+  </nav>
+  <div class="container">
+    <!-- NEW: The Dash Title & Language Toggle Target -->
+    <div class="section-title">
+      <span id="t-dash">My Dispatches</span>
+      <button class="lang-toggle" onclick="toggleLanguage()" id="t-lang-btn">አማርኛ</button>
+    </div>
 
-  <!-- Inside index.dev.html -->
-  <div id="app">
-    <!-- 1. The Black Nav Bar Target -->
-    <header id="header-component"></header>
-
-    <main id="main-content">
-      <!-- 2. The Analytics Target -->
-      <div id="admin-oversight-container"></div>
-
-      <!-- 3. The Cards Target -->
-      <div id="card-container"></div>
-    </main>
+    <div id="admin-oversight-container"></div>
+    <div id="card-container"></div>
   </div>
 
-  <!-- MANUALLY PASTE TEMPLATES HERE (Copy from Components.html) -->
-  <script type="text/template" id="tpl-agent-summary">
-    <div class="wallet-pill">Wallet: ${balance_formatted}</div>
+  <!-- 1. THE BRIDGE: Dynamically load the real Components.html -->
+  <div id="template-load-area"></div>
+
+  <script>
+    // Local Dev Helper: Fetches the real Components.html so you don't have to copy-paste
+    fetch('Components.html')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('template-load-area').innerHTML = html;
+        console.log("Blueprints loaded from Components.html");
+
+        // CRITICAL: Now that templates exist, load the App logic
+        const script = document.createElement('script');
+        script.src = 'App.js';
+        document.body.appendChild(script);
+      });
   </script>
 
-  <script type="text/template" id="tpl-recipient-card">
-    <div class="bubbly-card ${status_class}" id="card-${id}" onclick="toggleCard('${id}')" style="border:1px solid #ccc; margin:10px; padding:10px; border-radius:15px;">
-      <h3>${name}</h3>
-      <div>${amount_formatted}</div>
-      <div class="expanded-content">
-        <button onclick="handleConfirm('${id}')">Confirm</button>
-      </div>
-    </div>
-  </script>
-
-  <script type="text/template" id="tpl-admin-analytics">
-    <div class="admin-summary">Variance: ${variance_etb}</div>
-  </script>
-
-  <!-- MOCK DATA BRIDGE -->
+  <!-- 2. MOCK DATA BRIDGE -->
   <div id="state-bridge" data-state='{
     "user": {"name": "Dev Admin", "role": "admin"},
     "wallet": {"remaining": 50000},
     "recipients": [
-      {"id": "REC-01", "name": "Abebe Family", "status": "pending", "amount": 5000, "purpose": "Food Support"},
-      {"id": "REC-02", "name": "Bekele Shop", "status": "dispatched", "amount": 12000, "purpose": "Business"}
+      {"id": "REC-01", "name": "Abebe Family", "status": "pending", "amount": 5000, "isExpanded": false},
+      {"id": "REC-02", "name": "Bekele Shop", "status": "dispatched", "amount": 12000, "isExpanded": false}
     ],
-    "analytics": {"totalFixed": 17000, "totalActual": 17000, "variance": 0, "percentIncrease": 0}
+    "ui": {"language": "en"},
+    "analytics": { "totalFixed": 17000, "totalActual": 25000, "variance": 8000, "percentIncrease": 47.0 }
   }' style="display:none;"></div>
 
-  <!-- LOGIC -->
+  <!-- 3. BASE LOGIC -->
   <script src="Store.js"></script>
   <script src="Reducer.js"></script>
   <script src="Interceptors.js"></script>
   <script src="UIComponents.js"></script>
-  <script src="App.js"></script> <!-- Ensure this matches your new App.js file -->
+  <!-- App.js is loaded dynamically above after templates are ready -->
 </body>
 
 </html>

@@ -1,3 +1,58 @@
+<!-- src/Components.html -->
+
+<!-- 1. Header Blueprint -->
+<script type="text/template" id="tpl-agent-summary">
+  <div class="nav-content" style="display: flex; justify-content: space-between; width: 100%;">
+      <div class="user-meta">
+          <span class="user-name">${agent_name}</span>
+          <span class="wallet-bal">Wallet: ${balance_formatted}</span>
+      </div>
+  </div>
+</script>
+
+<!-- 2. Recipient Card Blueprint -->
+<script type="text/template" id="tpl-recipient-card">
+  <div class="card ${status_class}" id="card-${id}">
+      <div class="card-header" onclick="toggleCard('${id}')">
+          <div>
+              <div style="font-weight: 800; font-size: 1rem;">${name}</div>
+              <div style="font-size: 0.75rem; color: var(--text-s);">${id}</div>
+          </div>
+          <div style="text-align: right;">
+              <div class="amount">${amount_formatted}</div>
+              <button class="toggle-btn">${expand_icon}</button>
+          </div>
+      </div>
+      <div class="details-area">
+          <div class="purpose-row">
+            <span>${label_purpose}</span>
+            <strong>${amount_formatted}</strong>
+          </div>
+          <button class="btn-confirm" onclick="handleConfirm('${id}')">
+            ${label_confirm}
+          </button>
+      </div>
+  </div>
+</script>
+
+<!-- 3. Admin Analytics Blueprint -->
+<script type="text/template" id="tpl-admin-analytics">
+  <div class="card admin-summary ${severity_class}">
+    <div style="font-size: 0.7rem; text-transform: uppercase; color: #8e8e93; margin-bottom:5px;">Global Oversight</div>
+    <div style="display:flex; justify-content:space-between;">
+      <span>Budget: ${total_fixed}</span>
+      <span style="color:var(--primary)">Required: ${total_actual}</span>
+    </div>
+    <div class="variance-track">
+      <div class="variance-fill" style="width: ${percent_increase}%"></div>
+    </div>
+    <div style="font-size: 0.65rem; color: var(--text-s); margin-top:5px;">Variance: +${variance_etb} (${percent_increase}%)</div>
+  </div>
+</script>
+
+
+
+
 <!-- 1. THE MISSING HEADER (STUCK ISLAND) -->
 <script type="text/template" id="tpl-agent-summary">
   <div class="header-island-content">
@@ -50,4 +105,44 @@
       <span>Impact: <strong>${percent_increase}%</strong></span>
     </div>
   </div>
+
+</script>
+
+<!-- Admin Template -->
+<!-- src/Components.html -->
+<script type="text/template" id="tpl-admin-analytics">
+  <div class="bubbly-card admin-summary ${severity_class}">
+    <div class="summary-header">
+      <span class="label">Global Budget Oversight</span>
+      <span class="pulse-indicator"></span>
+    </div>
+    
+    <div class="summary-grid">
+      <div class="summary-item">
+        <label>Baseline Budget</label>
+        <div class="value">${total_fixed}</div>
+      </div>
+      <div class="summary-item">
+        <label>Required Funding</label>
+        <div class="value highlight">${total_actual}</div>
+      </div>
+    </div>
+
+    <!-- The Progress Bar showing the % increase due to inflation -->
+    <div class="variance-container">
+      <div class="variance-track">
+        <div class="variance-fill" style="width: ${percent_increase}%"></div>
+      </div>
+      <div class="variance-labels">
+        <span>Variance: +${variance_etb} ETB</span>
+        <span>${percent_increase}% Inflation Stress</span>
+      </div>
+    </div>
+  </div>
+  <div class="admin-controls">
+    <label>Simulate Rate: <span id="rate-val">${current_rate}</span></label>
+    <input type="range" min="50" max="150" value="${current_rate}" 
+          oninput="simulateRate(this.value)">
+  </div>
+
 </script>
