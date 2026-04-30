@@ -12,7 +12,7 @@
     ]
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest --env=jsdom"
   },
   "keywords": [],
   "author": "",
