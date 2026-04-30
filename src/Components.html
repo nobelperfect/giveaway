@@ -28,6 +28,12 @@
             <span>${label_purpose}</span>
             <strong>${amount_formatted}</strong>
           </div>
+                    <!-- NEW: Inline Input Field replaces the prompt() -->
+          <div style="margin-top:15px;">
+            <input type="text" 
+                   id="input-${id}" 
+                   class="bubbly-input" 
+                   placeholder="${label_receipt_placeholder}"></div>
           <button class="btn-confirm" onclick="handleConfirm('${id}')">
             ${label_confirm}
           </button>

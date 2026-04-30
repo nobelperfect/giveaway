@@ -66,6 +66,11 @@ function getInitialAppData() {
       recipientKeys
     );
     const allRecipients = recipientService.getRows();
+    // FIX: Map through the recipients to initialize the UI state
+    const hydratedRecipients = allRecipients.map(rec => ({
+      ...rec,
+      isExpanded: false // 1. Guaranteed starting point for every card
+    }));
 
     return {
       user: {
@@ -79,8 +84,8 @@ function getInitialAppData() {
         currency: "ETB"
       },
       recipients: agentData.role === "admin"
-        ? allRecipients
-        : allRecipients.filter(r => r.agentId === agentData.id),
+        ? hydratedRecipients
+        : hydratedRecipients.filter(r => r.agentId === agentData.id),
 
       exchangeRates: { current: currentRate, reference: 50.0 },
       ui: { language: "en", displayCurrency: "ETB" }

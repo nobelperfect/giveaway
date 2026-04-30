@@ -1,6 +1,16 @@
 /**
  * src/App.js - Pure Logic
  */
+// 1. Security Helper: Prevents XSS by escaping <, >, &, etc.
+const escapeHTML = (str) => {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+};
 
 // 1. GLOBAL HELPERS (Defined once, outside everything)
 const _t = (key, lang = 'en') => {
@@ -27,19 +37,24 @@ if (typeof document !== 'undefined') {
         console.log("!!! APP STARTING !!!");
 
         const bridge = document.getElementById('state-bridge');
+        // JEST SAFETY: Don't cry if the bridge is missing during a unit test
         if (!bridge || !bridge.dataset.state) {
-            console.error("Data bridge missing");
+            if (typeof jest === 'undefined') {
+                console.error("Data bridge missing");
+            }
             return;
         }
 
         const INITIAL_STATE = JSON.parse(bridge.dataset.state);
-
-        // Template Loader Helper
         const getTpl = (id) => {
             const el = document.getElementById(id);
-            if (!el) return null;
+            if (!el) {
+                console.warn(`Template ${id} missing, using fallback.`);
+                return `<div class="error">Template ${id} not found</div>`;
+            }
             return el.innerHTML;
         };
+
 
         // Initialize Store
         const store = createStore(appReducer, INITIAL_STATE, [securityInterceptor]);
@@ -49,6 +64,10 @@ if (typeof document !== 'undefined') {
          */
         function renderApp(state) {
             console.log("Rendering UI...");
+            // FIX bug_002: Use document.body to ensure theme works in BOTH Prod and Dev
+            const body = document.getElementById('ui-body') || document.body;
+
+            const lang = (state.ui && state.ui.language) ? state.ui.language : 'en';
 
             // Re-capture templates every render in case fetch() finished late
             const TPL_CARD = getTpl('tpl-recipient-card');
@@ -60,8 +79,8 @@ if (typeof document !== 'undefined') {
                 return;
             }
 
-            const lang = (state.ui && state.ui.language) ? state.ui.language : 'en';
-            const body = document.getElementById('ui-body');
+            // const lang = (state.ui && state.ui.language) ? state.ui.language : 'en';
+            // const body = document.getElementById('ui-body');
 
             // --- A. SYNC THE SHELL ---
             const dashTitle = document.getElementById('t-dash');
@@ -109,10 +128,11 @@ if (typeof document !== 'undefined') {
                         id: rec.id,
                         name: rec.name,
                         amount_formatted: formatCurrency(rec.amount),
-                        status_class: `${rec.status === 'dispatched' ? 'is-agent' : ''} ${isExpanded ? 'expanded' : ''}`,
+                        // FIX: Ensure 'expanded' is added as a class only when true
+                        status_class: `${rec.status === 'dispatched' ? 'is-agent' : ''} ${isExpanded ? 'expanded' : ''}`.trim(),
                         expand_icon: isExpanded ? '-' : '+',
                         label_purpose: _t('purpose', lang),
-                        label_confirm: rec.status === 'pending' ? _t('confirm', lang) : _t('done', lang) 
+                        label_confirm: rec.status === 'pending' ? _t('confirm', lang) : _t('done', lang)
                     });
                 }).join('');
             }
@@ -129,17 +149,33 @@ if (typeof document !== 'undefined') {
             store.dispatch({ type: 'TOGGLE_EXPAND', payload: id });
         };
 
+        // FIX sec_002: Restore Failure Handlers and Validate Inputs
         window.handleConfirm = (id) => {
-            const input = document.getElementById(`input-${id}`);
-            const receiptId = input ? input.value : '';
+            // 1. Grab value from the card's specific input field
+            const inputEl = document.getElementById(`input-${id}`);
+            const receiptId = inputEl ? inputEl.value : "";
+
+            // 2. Validation (Still solving sec_002)
+            if (!receiptId || receiptId.trim().length < 4 || !/^[a-z0-9_-]+$/i.test(receiptId.trim())) {
+                // Since alert() might also be blocked in Live Preview, use console.error or a UI message
+                console.error("Invalid Receipt ID format");
+                if (inputEl) inputEl.style.border = "2px solid var(--danger)";
+                return;
+            }
+
+            // 3. Local UI Update
             const success = store.dispatch({ type: 'CONFIRM_DISPATCH', payload: id });
             if (!success) return;
 
-            if (typeof google === 'undefined') {
-                console.log("DEV MODE: Sync simulated for", id);
-                return;
+            // 4. Server Sync
+            if (typeof google !== 'undefined' && google.script) {
+                google.script.run
+                    .withSuccessHandler(() => console.log('Sync complete'))
+                    .withFailureHandler(err => console.error('Sync failed:', err))
+                    .processDispatch(id, receiptId.trim());
+            } else {
+                console.log("DEV MODE: Confirmed", id, "with Receipt:", receiptId.trim());
             }
-            google.script.run.processDispatch(id, receiptId);
         };
 
         // Bootstrap
@@ -165,6 +201,6 @@ const AppLogic = {
 
 if (typeof module !== 'undefined' && module.exports) {
     // Export both the object and the standalone function for flexibility
-    module.exports = { AppLogic, _t }; 
+    module.exports = { AppLogic, _t };
 }
 

@@ -117,14 +117,20 @@ const appReducer = (state, action) => {
                 }
             };
         }
-        case 'TOGGLE_EXPAND':
+        case 'TOGGLE_EXPAND': {
             return {
                 ...state,
-                recipients: state.recipients.map(r =>
-                    r.id === action.payload ? { ...r, isExpanded: !r.isExpanded } : r
-                )
+                recipients: state.recipients.map(rec => {
+                    if (rec.id === action.payload) {
+                        // FIX: Use !! to force a boolean check, then flip it.
+                        // This ensures if it was undefined, it becomes true.
+                        const currentStatus = !!rec.isExpanded;
+                        return { ...rec, isExpanded: !currentStatus };
+                    }
+                    return rec;
+                })
             };
-
+        }
 
 
 
