@@ -1,5 +1,3 @@
-
-
 function createStore(reducer, initialState, middlewares = []) {
     let state = initialState;
     const listeners = [];
@@ -29,6 +27,12 @@ function createStore(reducer, initialState, middlewares = []) {
     };
 }
 
+// Node (Jest)
 if (typeof module !== 'undefined') {
     module.exports = { createStore };
+}
+
+// Browser (GAS)
+if (typeof window !== 'undefined') {
+    window.createStore = createStore;
 }

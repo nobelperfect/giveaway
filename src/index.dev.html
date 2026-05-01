@@ -19,6 +19,11 @@
 
     <div id="admin-oversight-container"></div>
     <div id="card-container"></div>
+    <!-- NEW: The Success Gallery Slot -->
+    <div class="section-title">
+      <span id="t-gallery">Success Stories</span>
+    </div>
+    <div id="gallery-container" class="gallery-grid"></div>
   </div>
 
   <!-- 1. THE BRIDGE: Dynamically load the real Components.html -->
@@ -48,6 +53,18 @@
       {"id": "REC-02", "name": "Bekele Shop", "status": "dispatched", "amount": 12000, "isExpanded": false}
     ],
     "ui": {"language": "en"},
+    "gallery": [
+      { "id": "S1",
+        "url": "https://google.com", 
+        "caption": "Abebe started his laundry business!", 
+        "date": "April 2026" 
+      },
+      { "id": "S2",
+        "url": "https://unsplash.com", 
+        "caption": "New equipment for the local shop.", 
+        "date": "March 2026" 
+      }
+    ],
     "analytics": { "totalFixed": 17000, "totalActual": 25000, "variance": 8000, "percentIncrease": 47.0 }
   }' style="display:none;"></div>
 

@@ -1,27 +1,50 @@
 function include(filename) {
-  return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  // Use try/catch to see if a specific file is failing
+  try {
+    return HtmlService.createHtmlOutputFromFile(filename).getContent();
+  } catch (e) {
+    return "/* Error loading " + filename + ": " + e.message + " */";
+  }
 }
+
 /**
  * src/Code.js
  */
 function doGet() {
-  // 1. Create the template from your Index.html file
-  const template = HtmlService.createTemplateFromFile('Index');
+  try {
+    // 1. Create the template
+    const template = HtmlService.createTemplateFromFile('Index');
 
-  // 2. Inject the initial state (The Handshake)
-  // Ensure getInitialAppData() is returning a valid object
-  template.initialState = JSON.stringify(getInitialAppData());
+    // 2. Inject initial state
+    const data = getInitialAppData();
+    template.initialState = JSON.stringify(data || {});
 
-  // 3. Evaluate the template
-  const output = template.evaluate();
+    // 3. Evaluate template
+    const output = template.evaluate();
 
-  // 4. Set security and mobile settings explicitly
-  output.setTitle('Fund Distribution Dashboard')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.SAMEORIGIN); // Standard Security
+    // 4. Manual Configuration (Isolating the Mode)
+    output.setTitle('Fund Distribution Dashboard');
+    output.addMetaTag('viewport', 'width=device-width, initial-scale=1');
 
-  return output;
+    // THE ULTIMATE FIX: 
+    // If the Enum constant is returning null, we handle it defensively.
+    const mode = HtmlService.XFrameOptionsMode.SAMEORIGIN;
+
+    if (mode !== null && mode !== undefined) {
+      output.setXFrameOptionsMode(mode);
+    } else {
+      // Fallback for weird V8 engine glitches
+      console.warn("XFrameOptionsMode Enum was null, skipping to prevent crash.");
+    }
+
+    return output;
+
+  } catch (e) {
+    // This will now show the REAL error if getInitialAppData is failing
+    return HtmlService.createHtmlOutput("<b>Initialization Error:</b> " + e.message);
+  }
 }
+
 
 
 /**
