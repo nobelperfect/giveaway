@@ -12,7 +12,8 @@
     ]
   },
   "scripts": {
-    "test": "jest --env=jsdom"
+    "test": "jest --env=jsdom",
+    "build": "node build.js"
   },
   "keywords": [],
   "author": "",

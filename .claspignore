@@ -1,4 +1,11 @@
-# .claspignore
-index.dev.html
-tests/**
-**/*.test.js
+# Ignore everything by default
+**/*
+
+# Allow only production-ready files
+!appsscript.json
+!dist/bundle.js.html
+!src/Index.html
+!src/Components.html
+!src/style.css.html
+!src/Code.js
+!src/Validator.js

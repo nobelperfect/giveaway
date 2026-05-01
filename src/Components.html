@@ -152,3 +152,19 @@
   </div>
 
 </script>
+
+<!-- The Success Gallery -->
+<!-- src/Components.html -->
+<script type="text/template" id="tpl-gallery-item">
+  <!-- Added onclick and cursor:pointer style -->
+  <div class="gallery-card" onclick="openStory('${id}')" style="cursor:pointer;">
+    <div class="gallery-image" style="background-image: url('${url}')">
+        <div class="gallery-overlay"><i class="fas fa-expand"></i></div>
+    </div>
+    <div class="gallery-info">
+      <div class="gallery-caption">${caption}</div>
+      <div class="gallery-date">${date}</div>
+    </div>
+  </div>
+</script>
+

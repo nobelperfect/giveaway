@@ -1,29 +1,50 @@
-name: CI/CD Pipeline
+name: Deploy to Google Apps Script
 
-on: [pull_request, push]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  test-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    steps:
-      # Updated to v4
-      - uses: actions/checkout@v4
 
-      # Updated to v4 and Node 24
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
           node-version: '24'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Jest Tests
+      # ✅ TEST FIRST (critical)
+      - name: Run Tests
         run: npm test
 
-      - name: Deploy to Google
-        if: github.ref == 'refs/heads/main' && success()
-        run: |
-          npm install -g @google/clasp
-          echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
-          clasp push -f
+      # ✅ BUILD
+      - name: Build Production Bundle
+        run: npm run build
+
+      # ✅ DEBUG (optional but powerful)
+      - name: Verify Build Output
+        run: ls -R dist
+
+      # ✅ Ensure files exist
+      - name: Ensure bundle exists
+        run: test -f dist/bundle.js.html
+
+      # ✅ AUTH
+      - name: Create Clasp Auth File
+        run: echo "${{ secrets.CLASPRC_JSON }}" > ~/.clasprc.json
+
+      # ✅ Optional visibility
+      - name: Check clasp status
+        run: npx clasp status
+
+      # ✅ DEPLOY
+      - name: Push to Google Apps Script
+        run: npx clasp push -f

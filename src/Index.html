@@ -1,39 +1,27 @@
 <!DOCTYPE html>
 <html>
-
 <head>
   <base target="_top">
-  <?!= include('Stylesheet'); ?>
+  <!-- The build script already added the <style> tags -->
+  <?!= include('dist/style.css'); ?>
 </head>
-
-<body id="ui-body"> <!-- Ensure ID exists -->
-
-  <nav class="top-nav">
-    <div id="header-component"></div>
-  </nav>
-
+<body id="ui-body">
+  <nav class="top-nav"><div id="header-component"></div></nav>
+  
   <div class="container">
-    <!-- PROD version needs these too for the Conductor to find them! -->
     <div class="section-title">
       <span id="t-dash">My Dispatches</span>
-      <button class="lang-toggle" onclick="toggleLanguage()" id="t-lang-btn">አማርኛ</button>
+      <button onclick="toggleLanguage()" id="t-lang-btn">አማርኛ</button>
     </div>
-
     <div id="admin-oversight-container"></div>
     <div id="card-container"></div>
+    <div id="gallery-container" class="gallery-grid"></div>
   </div>
 
-  <!-- 1. Templates -->
   <?!= include('Components'); ?>
+  <div id="state-bridge" style="display:none;" data-state='<?!= initialState ?>'></div>
 
-  <!-- 2. Data Bridge -->
-  <div id="state-bridge" data-state='<?!= initialState ?>' style="display:none;"></div>
-
-  <!-- 3. Logic Injection (Wrap in a script block) -->
-
-
-  <!-- 4. Conductor (Already has <script> tags inside it) -->
-  <?!= include('JavaScript'); ?>
+  <!-- The build script already added the <script> tags -->
+  <?!= include('dist/bundle.js'); ?>
 </body>
-
 </html>

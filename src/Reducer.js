@@ -1,8 +1,8 @@
 
-// /**
-// * src/Reducer.js
-// * The "Accountant": Pure logic to handle state transitions.
-// */
+/**
+   // * src/Reducer.js
+   // * The "Accountant": Pure logic to handle state transitions.
+   // */
 
 const appReducer = (state, action) => {
     switch (action.type) {
@@ -131,7 +131,12 @@ const appReducer = (state, action) => {
                 })
             };
         }
-
+        // NEW: The Gallery Handler
+        case 'ADD_GALLERY_ITEM':
+            return {
+                ...state,
+                gallery: [action.payload, ...(state.gallery || [])]
+            };
 
 
         default:

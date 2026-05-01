@@ -8,6 +8,7 @@ describe('Reducer: Inflation & Threshold Logic', () => {
         initialState = {
             exchangeRates: { current: 50 },
             wallet: { remaining: 50000 },
+            gallery:[],
             recipients: [{
                 id: 'REC-01',
                 name: 'Test Family',
@@ -134,6 +135,18 @@ describe('Reducer: Inflation & Threshold Logic', () => {
         expect(newState.wallet.remaining).toBe(initialState.wallet.remaining); // Data safe!
     });
 
+    test('should add new success story to the top of the gallery', () => {
+        const initialState = { gallery: [{ id: 1, caption: 'Old' }] };
+        const action = {
+            type: 'ADD_GALLERY_ITEM',
+            payload: { id: 2, caption: 'New Fruit' }
+        };
+
+        const newState = appReducer(initialState, action);
+
+        expect(newState.gallery.length).toBe(2);
+        expect(newState.gallery[0].caption).toBe('New Fruit'); // Verified: Added to top!
+    });
 
 
 
